@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block content %}
+    <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.18/css/jquery.dataTables.min.css"/>
+    <script src="https://code.jquery.com/jquery-3.3.1.js"></script>
+    <script src="https://cdn.datatables.net/1.10.18/js/jquery.dataTables.min.js"></script>
+    <table id="homeTable" class="display" style="width: 100%">
+        <thead>
+        <tr>
+            <th>Class</th>
+            <th>Assignment</th>
+            <th>Due at</th>
+            <th>Assignment grade</th>
+            <th>Total score</th>
+{#            <th>Submission type</th>#}
+            <th>Action</th>
+        </tr>
+        </thead>
+    </table>
+
+    <script>
+        function loadTable(){
+            $(document).ready(function(){
+                $('#homeTable').DataTable({
+                    //This function appends a
+                    initComplete: function () {
+                        //to apply this to every column, then leave it as columns()
+                        //to specify which columns to apply, do columns(2,3,5)
+                        this.api().columns().every( function () {
+                            var column = this;
+                            var select = $('<select><option value=""></option></select>')
+                                .appendTo( $(column.footer()).empty() )
+                                .on( 'change', function () {
+                                    var val = $.fn.dataTable.util.escapeRegex(
+                                        $(this).val()
+                                    );
+
+                                    column
+                                        .search( val ? '^'+val+'$' : '', true, false )
+                                        .draw();
+                                } );
+
+                            column.data().unique().sort().each( function ( d, j ) {
+                                select.append( '<option value="'+d+'">'+d+'</option>' )
+                            } );
+                        } );
+                    },
+                    "ajax": {
+                        "url": "/setup/home",                //basically tells js what url to go to in order to retrieve the desired data
+                        "dataType": "json",                 //format the data will be in
+                        "dataSrc": "data",                  //stats what the name of the src dir to look in
+                        "contentType": "application/json"   //pretty much the same as DataType
+                    },
+                    {#"columnDefs": [#}
+                    {#    {"visible": false, "targets": 0}    //determines what columns to hide#}
+                    {#],#}
+                    "order": [[ 2, "asc" ]],
+                    "pageLength": 100,
+                    "columns": [
+                        {"data": "course"},
+                        {"data": "assignment",
+                            "fnCreatedCell": function(nTd, sData, oData, iRow, iCol) {   //not sure what nTd is and could find much but it works...
+                               $(nTd).html("<a href='"+oData.url+"'>"+oData.assignment+"</a>");
+                           }
+                        },
+                        {"data": "due"},
+                        {"data": "assignment_grade"},
+                        {"data": "total_score"},
+                        {#{"data": "Submission Type"},#}
+                        {"data": "remove",
+                           "fnCreatedCell": function(nTd, sData, oData, iRow, iCol) {   //not sure what nTd is and could find much but it works...
+                               $(nTd).html("<a href='/delete/"+oData.id+"'>Remove</a>");
+                           }
+                        }
+                    ]
+                });
+            });
+
+        }
+        $(window).on("load", loadTable);
+    </script>
+
+{% endblock content %}
